@@ -23,11 +23,7 @@ PID = [-5.351252092067932e+02, -16.153015196840713, -1.095815053258989e+03];
 
 CV = 3; % Tc
 MV = 2; % Qc
-setpoint = 323.56;
-
-%%
-% novoPID = fmincon(@(par) custo(@(e, Ts) indice.ITSE(e, Ts), reator, yss, uss, nsim, Ts, par, CV, MV, setpoint),...
-%                     PID,eye(3),zeros(3,1),[],[],[],[],[]);
+setpoint = 320.8;
 
 %% Resultado
 novoPID = PID;
@@ -47,7 +43,7 @@ P = (2*reator.fi*kd.*M./kt).^0.5;
 Qc = U(:,2);
 
 figure
-plot(t,Qc)
+stairs(t,Qc)
 ylabel('Qc')
 
 figure
