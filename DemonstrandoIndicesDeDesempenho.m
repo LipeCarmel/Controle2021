@@ -13,7 +13,7 @@ hold on
 plot(t,ysp,'r--')
 
 %% Avaliação de Desempenho
-e = y - ysp;
+e = (y - ysp)';
 
 ISE = indice.ISE(e, Ts);
 IAE = indice.IAE(e, Ts);

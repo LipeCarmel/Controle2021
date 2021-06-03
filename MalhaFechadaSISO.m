@@ -4,8 +4,8 @@ clear all; close all; clc
 reator = ReatorPolimer;
 
 % Tempo de simulação
-tempo_total = 120;   % min
-Ts = 1;              % min
+tempo_total = 80;   % min
+Ts = 1;             % min
 nsim = ceil(tempo_total/Ts);
 t = Ts : Ts*nsim;
 
@@ -17,21 +17,15 @@ yss = fsolve(@(x)reator.derivadas(0,x, uss), y, optimset('Display','off'));
 
 %% Malha SISO
 % Sintonia inicial como um controlador P de ganho unitário
-PID = [-100, 0, 0];
-PID = [-5.351252092067932e+02, -16.153015196840713, -1.095815053258989e+03];
-
+PID = [-1, 0, 0];
+% O vetor contém ganhos proporcional, integral e derivativo. 
 
 CV = 3; % Tc
 MV = 2; % Qc
-setpoint = 323.56;
+setpoint = 320.8;
+[Y,U,e] = malha_SISO(reator, yss, uss, uss, nsim, Ts, PID, CV, MV, setpoint);
 
-%%
-% novoPID = fmincon(@(par) custo(@(e, Ts) indice.ITSE(e, Ts), reator, yss, uss, nsim, Ts, par, CV, MV, setpoint),...
-%                     PID,eye(3),zeros(3,1),[],[],[],[],[]);
-
-%% Resultado
-novoPID = PID;
-[Y,U,e] = malha_SISO(reator, yss, uss, uss, nsim, Ts, novoPID, CV, MV, setpoint);
+%% Gráficos
 
 I = Y(:,1);
 M = Y(:,2);
@@ -43,12 +37,6 @@ visc = 0.0012*(D0./D1).^0.71;
 kd = reator.Ad*exp(-reator.Ed./T);
 kt = reator.At*exp(-reator.Et./T);
 P = (2*reator.fi*kd.*M./kt).^0.5;
-
-Qc = U(:,2);
-
-figure
-plot(t,Qc)
-ylabel('Qc')
 
 figure
 plot(t,I)
@@ -75,11 +63,7 @@ plot(t,P)
 ylabel('Concentração de Polímero')
 
 %% Funções
-function J = custo(indice_desempenho, reator, yss, uss, nsim, Ts, PID, CV, MV, setpoint)
-    [~,~,e] = malha_SISO(reator, yss, uss, uss, nsim, Ts, PID, CV, MV, setpoint);
-    J = indice_desempenho(e, Ts);
-end
-function u = controlador_PID(e, Ts, PID, uk_1, uss)
+function u = controlador_PID(e, Ts, PID)
     % O vetor erro (e) deve conter ao menos duas posições.
     % PID é assumido como vetor linha contendo os ganhos proporcional,
     % integral e derivativo. Ou seja:
@@ -89,17 +73,11 @@ function u = controlador_PID(e, Ts, PID, uk_1, uss)
     % Ti = Ke/Ki;
     % Td = Kd/Ke;
     erros = [e(end); trapz(e)*Ts; (e(end)-e(end-1))/Ts];
-    %erros = [e(end); 0; 0];
-    
-    u = PID*erros + uss;	% em desvio
-    duk = u - uk_1;
-    if abs(duk) > abs(uss)*.1
-       u =  uk_1 + sign(duk)*uss*.1;
-    end
+    u = PID*erros;  % em desvio
 end
 
 function [Y,U,e] = malha_SISO(reator, y0, u0, uss, nsim, Ts, PID, CV, MV, setpoint)
-    e = zeros(nsim + 1, 1); e(1) = setpoint - y0(CV);
+    e = zeros(nsim + 1, 1);
     Y = zeros(nsim, length(y0));
     U = zeros(nsim, length(u0));
     
@@ -116,9 +94,6 @@ function [Y,U,e] = malha_SISO(reator, y0, u0, uss, nsim, Ts, PID, CV, MV, setpoi
         
         % Coleta de CV
         e(i+1) = setpoint - y0(CV);
-        u0(MV) = controlador_PID(e(1:i+1), Ts, PID, u0(MV), uss(MV));
-        if u0(MV) < 0
-           u0 = 0; 
-        end
+        u0(MV) = controlador_PID(e(1:i+1), Ts, PID) + uss(MV);
     end
 end

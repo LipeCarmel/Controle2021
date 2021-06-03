@@ -115,7 +115,7 @@ function [Y,U,e] = malha_SISO(reator, y0, u0, uss, nsim, Ts, PID, CV, MV, setpoi
         y0 = y(end, :);
         
         % Coleta de CV
-        e(i+1) = setpoint - y0(CV);
+        e(i+1) = setpoint - y0(CV) + (rand()-.5)/10;
         u0(MV) = controlador_PID(e(1:i+1), Ts, PID, u0(MV), uss(MV));
         if u0(MV) < 0
            u0 = 0; 
