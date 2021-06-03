@@ -9,7 +9,7 @@ y0 = [6.6832e-2, 3.3245, 323.56, 305.17, 2.7547e-4, 16.110];
 y0 = fsolve(@(x)reator.derivadas(0, x, u), y0, optimset('Display','off'));
 
 u = [108, 471.6];
-u(1) = 120;
+u(1) = 105;
 
 
 [t,y] = ode15s(@(t,y) reator.derivadas(t,y,u), [0: .1 : 200], y0);

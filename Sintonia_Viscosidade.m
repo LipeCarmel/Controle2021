@@ -4,7 +4,7 @@ clear all; close all; clc
 reator = ReatorPolimer;
 
 % Tempo de simulação
-tempo_total = 120;   % min
+tempo_total = 400;   % min
 Ts = 1;              % min
 nsim = ceil(tempo_total/Ts);
 t = Ts : Ts*nsim;
@@ -14,24 +14,23 @@ uss = [108, 471.6];
 y = [6.6832e-2, 3.3245, 323.56, 305.17, 2.7547e-4, 16.110];
 % Obtenção do ponto exato
 yss = fsolve(@(x)reator.derivadas(0,x, uss), y, optimset('Display','off'));
+viscosiss = reator.viscosidade;
 
 %% Malha SISO
 % Sintonia inicial como um controlador P de ganho unitário
-PID = [-100, 0, 0];
-PID = [-5.351252092067932e+02, -16.153015196840713, -1.095815053258989e+03];
+PID = [-1.1594, -0.4554, -0.2797];
+PID = [-1, -.4, -.2];
 
-
-CV = 3; % T
-MV = 2; % Qc
-setpoint = 320.8;
+MV = 1; % Qi
+setpoint = 3;%3.17;
 
 %% Sintonia
-novoPID = fmincon(@(par) custo(@(e, Ts) indice.ITSE(e, Ts), reator, yss, uss, nsim, Ts, par, CV, MV, setpoint),...
-                    PID,eye(3),zeros(3,1),[],[],[],[],[]);
-
+% novoPID = fmincon(@(par) custo(@(e, Ts) indice.ITSE(e, Ts), reator, yss, uss, nsim, Ts, par, MV, setpoint),...
+%                     PID, eye(3),zeros(3,1),[],[],[],[],[], optimoptions('fmincon', 'StepTolerance', 1e-7));
+% npid = novoPID;
 %% Resultado
-novoPID = PID;
-[Y,U,e] = malha_SISO(reator, yss, uss, uss, nsim, Ts, novoPID, CV, MV, setpoint);
+novoPID = [-10, -.4, -.2];
+[Y,U,e] = malha_SISO(reator, yss, uss, uss, nsim, Ts, novoPID, MV, setpoint);
 
 I = Y(:,1);
 M = Y(:,2);
@@ -39,12 +38,17 @@ T = Y(:,3);
 Tc = Y(:,4);
 D0 = Y(:,5);
 D1 = Y(:,6);
-visc = 0.0012*(D0./D1).^0.71;
+visc = 0.0012*(D1./D0).^0.71;
 kd = reator.Ad*exp(-reator.Ed./T);
 kt = reator.At*exp(-reator.Et./T);
 P = (2*reator.fi*kd.*M./kt).^0.5;
-
+Qi = U(:,1);
 Qc = U(:,2);
+
+%%
+figure
+stairs(t,Qi)
+ylabel('Qi')
 
 figure
 stairs(t,Qc)
@@ -67,7 +71,7 @@ plot(t,Tc)
 ylabel('Temperatura da Camisa')
 
 figure
-plot(t,(D0./D1).^0.71)
+plot(t,visc)
 ylabel('Viscosidade')
 
 figure
@@ -75,8 +79,8 @@ plot(t,P)
 ylabel('Concentração de Polímero')
 
 %% Funções
-function J = custo(indice_desempenho, reator, yss, uss, nsim, Ts, PID, CV, MV, setpoint)
-    [~,~,e] = malha_SISO(reator, yss, uss, uss, nsim, Ts, PID, CV, MV, setpoint);
+function J = custo(indice_desempenho, reator, yss, uss, nsim, Ts, PID, MV, setpoint)
+    [~,~,e] = malha_SISO(reator, yss, uss, uss, nsim, Ts, PID, MV, setpoint);
     J = indice_desempenho(e, Ts);
 end
 function u = controlador_PID(e, Ts, PID, uk_1, uss)
@@ -92,14 +96,14 @@ function u = controlador_PID(e, Ts, PID, uk_1, uss)
     %erros = [e(end); 0; 0];
     
     u = PID*erros + uss;	% em desvio
-    duk = u - uk_1;
-    if abs(duk) > abs(uss)*.1
-       u =  uk_1 + sign(duk)*uss*.1;
-    end
+%     duk = u - uk_1;
+%     if abs(duk) > abs(uss)*.1
+%        u =  uk_1 + sign(duk)*uss*.1;
+%     end
 end
 
-function [Y,U,e] = malha_SISO(reator, y0, u0, uss, nsim, Ts, PID, CV, MV, setpoint)
-    e = zeros(nsim + 1, 1); e(1) = setpoint - y0(CV);
+function [Y,U,e] = malha_SISO(reator, y0, u0, uss, nsim, Ts, PID, MV, setpoint)
+    e = zeros(nsim + 1, 1); e(1) = setpoint - reator.viscosidade;
     Y = zeros(nsim, length(y0));
     U = zeros(nsim, length(u0));
     
@@ -115,7 +119,7 @@ function [Y,U,e] = malha_SISO(reator, y0, u0, uss, nsim, Ts, PID, CV, MV, setpoi
         y0 = y(end, :);
         
         % Coleta de CV
-        e(i+1) = setpoint - y0(CV);
+        e(i+1) = setpoint - reator.viscosidade;
         u0(MV) = controlador_PID(e(1:i+1), Ts, PID, u0(MV), uss(MV));
         if u0(MV) < 0
            u0 = 0; 
