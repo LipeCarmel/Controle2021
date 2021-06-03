@@ -15,19 +15,44 @@ y0 = [6.6832e-2, 3.3245, 323.56, 305.17, 2.7547e-4, 16.110];
 
 [t,y] = ode15s(@(t,y) reator.derivadas(t,y,u), [0: .1 : 200], y0);
 
-%% X = [I M T Tc D0 D1]
+%% y = [I M T Tc D0 D1]
+
+I = y(:,1);
+M = y(:,2);
+T = y(:,3);
+Tc = y(:,4);
+D0 = y(:,5);
+D1 = y(:,6);
+visc = 0.0012*(D0./D1).^0.71;
+kd = reator.Ad*exp(-reator.Ed./T);
+kt = reator.At*exp(-reator.Et./T);
+P = (2*reator.fi*kd.*M./kt).^0.5;
+
 figure
-plot(t,y(:,1))
+plot(t,I)
 ylabel('Iniciador')
+
 figure
-plot(t,y(:,2))
+plot(t,M)
 ylabel('Monômero')
+
 figure
-plot(t,y(:,3))
+plot(t,T)
 ylabel('Temperatura')
+
 figure
-plot(t,y(:,4))
+plot(t,Tc)
 ylabel('Temperatura da Camisa')
+
 figure
-plot(t,(y(:,end-1)./y(:,end)).^0.71)
+plot(t,(D0./D1).^0.71)
 ylabel('Viscosidade')
+
+figure
+plot(t,P)
+ylabel('Concentração de Polímero')
+
+
+
+
+

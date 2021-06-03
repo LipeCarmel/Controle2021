@@ -6,7 +6,7 @@ u = [108, 471.6];
 y = [6.6832e-2, 3.3245, 323.56, 305.17, 2.7547e-4, 16.110];
 
 % Variando a entrada
-Q_test = 100 : 10 : 700;
+Q_test = [50 : 20 : 700];
 %Q_test = 50 : 2 : 200;
 
 X = [];    % Matriz de pontos de equilíbrio
@@ -45,6 +45,10 @@ Tc = X(:,4);
 D0 = X(:,5);
 D1 = X(:,6);
 visc = 0.0012*(D0./D1).^0.71;
+kd = reator.Ad*exp(-reator.Ed./T);
+kt = reator.At*exp(-reator.Et./T);
+P = (2*reator.fi*kd.*M./kt).^0.5;
+
 
 figure
 plot(Q, I, '.')
@@ -69,6 +73,11 @@ xlabel('Q')
 figure
 plot(Q, visc, '.')
 ylabel('Viscosidade')
+xlabel('Q')
+
+figure
+plot(Q, P, '.')
+ylabel('Concentração de Polímero')
 xlabel('Q')
 
 function g = ModeloLinear(xss, u, reator)
