@@ -20,7 +20,7 @@ yss = fsolve(@(x)reator.derivadas(0,x, uss), y, optimset('Display','off'));
 PID = [-1, 0, 0];
 % O vetor contém ganhos proporcional, integral e derivativo. 
 
-CV = 3; % Tc
+CV = 3; % T
 MV = 2; % Qc
 setpoint = 320.8;
 [Y,U,e] = malha_SISO(reator, yss, uss, uss, nsim, Ts, PID, CV, MV, setpoint);
