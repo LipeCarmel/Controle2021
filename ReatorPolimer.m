@@ -5,7 +5,6 @@ classdef ReatorPolimer < handle
         
         % Parâmetros:
         % Vazões
-        Qs = 459;
         Qm = 378;
         % Parâmetros cineticos
         Ad = 2.142*10^17;
@@ -49,9 +48,11 @@ classdef ReatorPolimer < handle
             %Qc = 471.6;
             Qi = u(1);
             Qc = u(2);
-            Qt = Qi + obj.Qs + obj.Qm;
             
-            obj.Mw = X(5)/X(6);
+            Qs = 1.5*obj.Qm - Qi;
+            Qt = Qi + Qs + obj.Qm;
+            
+            obj.Mw = X(6)/X(5);
             
             kd = obj.Ad*exp(-obj.Ed/X(3));
             kp = obj.Ap*exp(-obj.Ep/X(3));
