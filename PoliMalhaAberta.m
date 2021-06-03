@@ -23,7 +23,7 @@ Tc = y(:,4);
 D0 = y(:,5);
 D1 = y(:,6);
 
-visc = 0.0012*(D0./D1).^0.71;
+visc = 0.0012*(D1./D0).^0.71;
 kd = reator.Ad*exp(-reator.Ed./T);
 kt = reator.At*exp(-reator.Et./T);
 P = (2*reator.fi*kd.*M./kt).^0.5;

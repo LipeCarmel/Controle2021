@@ -20,7 +20,6 @@ yss = fsolve(@(x)reator.derivadas(0,x, uss), y, optimset('Display','off'));
 PID = [-100, 0, 0];
 PID = [-5.351252092067932e+02, -16.153015196840713, -1.095815053258989e+03];
 
-
 CV = 3; % T
 MV = 2; % Qc
 setpoint = 320.8;
@@ -35,7 +34,7 @@ T = Y(:,3);
 Tc = Y(:,4);
 D0 = Y(:,5);
 D1 = Y(:,6);
-visc = 0.0012*(D0./D1).^0.71;
+visc = 0.0012*(D1./D0).^0.71;
 kd = reator.Ad*exp(-reator.Ed./T);
 kt = reator.At*exp(-reator.Et./T);
 P = (2*reator.fi*kd.*M./kt).^0.5;
@@ -63,7 +62,7 @@ plot(t,Tc)
 ylabel('Temperatura da Camisa')
 
 figure
-plot(t,(D0./D1).^0.71)
+plot(t,visc)
 ylabel('Viscosidade')
 
 figure
