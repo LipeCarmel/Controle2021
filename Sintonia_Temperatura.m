@@ -17,8 +17,7 @@ yss = fsolve(@(x)reator.derivadas(0,x, uss), y, optimset('Display','off'));
 
 %% Malha SISO
 % Sintonia inicial como um controlador P de ganho unitário
-PID = [-100, 0, 0];
-PID = [-5.351252092067932e+02, -16.153015196840713, -1.095815053258989e+03];
+PID = [-1.040120716248880e+03, -16.069082517216078, -2.100918309282853e+03];
 
 
 CV = 3; % T
