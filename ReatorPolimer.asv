@@ -69,5 +69,6 @@ classdef ReatorPolimer < handle
         function n = viscosidade(obj)
            n = 0.0012*obj.Mw^0.71; 
         end
+        function n
     end
 end

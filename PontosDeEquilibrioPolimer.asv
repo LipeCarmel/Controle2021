@@ -38,17 +38,15 @@ Qc = X(:, end);
 I = X(:,1);
 M = X(:,2);
 T = X(:,3);
-Tc = X(:,4);
+T = X(:,3);
 D0 = X(:,5);
 D1 = X(:,6);
 visc = 0.0012*(D0./D1).^0.71;
 
-figure
 plot(Qc, I, '.')
 ylabel('Iniciador')
 xlabel('Qc')
 
-figure
 plot(Qc, M, '.')
 ylabel('Monômero')
 xlabel('Qc')
