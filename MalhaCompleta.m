@@ -133,9 +133,6 @@ function u = controlador_PID(e, Ts, PID, uk_1, uss)
     if abs(duk) > abs(uss)*.1
        u =  uk_1 + sign(duk)*uss*.1;
     end
-    if u < 0
-        u = 0;
-    end
 end
 
 function [Y,U,e,setpoint] = malhas_paralelas(reator, y0, u0, uss, nsim, Ts, PID_Qc, PID_Qi)
@@ -193,8 +190,14 @@ function [Y,U,e,setpoint] = malhas_paralelas(reator, y0, u0, uss, nsim, Ts, PID_
         
         % Qi
         u0(1) = controlador_PID(e(1:i+1,1), Ts, PID_Qi, u0(1), uss(1));
+        if u0(1) < 50
+            u0(1) = 50;
+        end
         % Qc
         u0(2) = controlador_PID(e(1:i+1,2), Ts, PID_Qc, u0(2), uss(2));
+        if u0(2) < 200
+            u0(2) = 200;
+        end
         
     end
 end
