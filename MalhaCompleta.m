@@ -4,7 +4,7 @@ clear all; close all; clc
 reator = ReatorPolimer;
 
 % Tempo de simulação
-tempo_total = 210;   % min
+tempo_total = 480;   % min
 Ts = 1;              % min
 nsim = ceil(tempo_total/Ts);
 t = Ts : Ts*nsim;
@@ -18,11 +18,12 @@ yss = fsolve(@(x)reator.derivadas(0,x, uss), y, optimset('Display','off'));
 %% Malha SISO
 % Sintonia inicial como um controlador P de ganho unitário
 PID_Qi = [-83.148611713950790, -12.512685662730720, -0.269884930099017];
-PID_Qc = [-1.040120716248880e+03, -16.069082517216078, -2.100918309282853e+03];
-
+%PID_Qc = [-1.040120716248880e+03, -16.069082517216078,-2.100918309282853e+03]; % simples
+%PID_Qc = [-9.046433675921414e+02, -16.064519647501786, -1.704890573504619e+03]; % duRdu, R = diag(1e-4)
+PID_Qc = [-2.128358892805603e+02, -16.501882846447092, -4.281661430481993e-04]; % du(R)du, R = diag(1e-3)
 
 %% Resultado
-[Y,U,e] = malhas_paralelas(reator, yss, uss, uss, nsim, Ts, PID_Qc, PID_Qi);
+[Y,U,e,setpoint] = malhas_paralelas(reator, yss, uss, uss, nsim, Ts, PID_Qc, PID_Qi);
 
 I = Y(:,1);
 M = Y(:,2);
@@ -33,44 +34,81 @@ D1 = Y(:,6);
 visc = 0.0012*(D1./D0).^0.71;
 kd = reator.Ad*exp(-reator.Ed./T);
 kt = reator.At*exp(-reator.Et./T);
-P = (2*reator.fi*kd.*M./kt).^0.5;
+
+P = (2*reator.fi*kd.*I./kt).^0.5;
+
+kp = reator.Ap*exp(-reator.Ep./T);
 
 
 Qi = U(:,1);
-
-figure
-stairs(t,Qi)
-ylabel('Qi')
-
 Qc = U(:,2);
 
+%%
 figure
-stairs(t,Qc)
-ylabel('Qc')
+stairs(t/60, Qi)
+title('Alimentação de iniciador')
+ylabel('Qi/(L/h)')
+xlabel('t/(h)')
+
 
 figure
-plot(t,I)
-ylabel('Iniciador')
+stairs(t/60,Qc)
+title('Alimentação da camisa')
+ylabel('Qc/(L/h)')
+xlabel('t/(h)')
 
 figure
-plot(t,M)
-ylabel('Monômero')
+plot(t/60,I)
+title('Concentração de Iniciador')
+ylabel('I/(mol/L)')
+xlabel('t/(h)')
 
 figure
-plot(t,T)
-ylabel('Temperatura')
+plot(t/60,M)
+title('Concentração de Monômero')
+ylabel('M/(mol/L)')
+xlabel('t/(h)')
 
 figure
-plot(t,Tc)
-ylabel('Temperatura da Camisa')
+plot(t/60,T,'LineWidth',1.5)
+hold on
+stairs(t/60,setpoint(:,2)+1,'r--','LineWidth',1.5)
+stairs(t/60,setpoint(:,2)-1,'r--','LineWidth',1.5)
+
+title('Temperatura do Reator')
+ylabel('T/(K)')
+xlabel('t/(h)')
 
 figure
-plot(t,visc)
+plot(t/60,Tc)
+title('Temperatura da Camisa')
+ylabel('Tc/(K)')
+xlabel('t/(h)')
+
+figure
+plot(t/60,visc,'LineWidth',1.5)
 ylabel('Viscosidade')
+hold on
+stairs(t/60,setpoint(:,1),'r--','LineWidth',1.5)
+xlabel('t/(h)')
 
 figure
-plot(t,P)
-ylabel('Concentração de Polímero')
+plot(t/60,P)
+title('Concentração de Polímero')
+ylabel('P/(M)')
+xlabel('t/(h)')
+
+figure
+plot(t,D0)
+title('Momento Estatístico de Ordem Zero')
+ylabel('D0')
+xlabel('t/(h)')
+
+figure
+plot(t/60,D1)
+title('Momento Estatístico de Primeira Ordem')
+ylabel('D1')
+xlabel('t/(h)')
 
 %% Funções
 function J = custo(indice_desempenho, reator, yss, uss, nsim, Ts, PID, CV, MV, setpoint)
@@ -99,9 +137,11 @@ function u = controlador_PID(e, Ts, PID, uk_1, uss)
     end
 end
 
-function [Y,U,e] = malhas_paralelas(reator, y0, u0, uss, nsim, Ts, PID_Qc, PID_Qi)
+function [Y,U,e,setpoint] = malhas_paralelas(reator, y0, u0, uss, nsim, Ts, PID_Qc, PID_Qi)
+    setpoint = [];
     Viscosp = 3.17;
     Tsp = 320.8;
+    
     e = zeros(nsim + 1, 2);
     e(1,1) = Viscosp - reator.viscosidade;  % Viscosidade
     e(1,2) = Tsp - y0(3);  % Temperatura
@@ -120,20 +160,24 @@ function [Y,U,e] = malhas_paralelas(reator, y0, u0, uss, nsim, Ts, PID_Qc, PID_Q
         % Atualização
         y0 = y(end, :);
         
-        if i < nsim/3
-        elseif i < nsim*3/4
+        if i < 2*60
+            setpoint = [setpoint; [Viscosp, Tsp]];
+        elseif i < 5*60
             Viscosp = 2.964;
             Tsp = 323.56;
+            setpoint = [setpoint; [Viscosp, Tsp]];
         else
             Viscosp = 2.5361;
-            %Tsp = 323.56;
-            Tsp = 320.8;
+            Tsp = 323.56;
+            %Tsp = 320.8;
+            
+            setpoint = [setpoint; [Viscosp, Tsp]];
         end
             
         
         % Coleta de CV
         e(i+1,1) = Viscosp - reator.viscosidade;    % Viscosidade
-        e(i+1,2) = Tsp - y0(3)+ + (rand()-.5)/10;   % Temperatura
+        e(i+1,2) = Tsp - y0(3)+ + 2*(rand()-.5);   % Temperatura
         
         % Qi
         u0(1) = controlador_PID(e(1:i+1,1), Ts, PID_Qi, u0(1), uss(1));
