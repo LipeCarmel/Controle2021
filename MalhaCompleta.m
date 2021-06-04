@@ -4,7 +4,7 @@ clear all; close all; clc
 reator = ReatorPolimer;
 
 % Tempo de simulação
-tempo_total = 480;   % min
+tempo_total = 15*60;   % min
 Ts = 1;              % min
 nsim = ceil(tempo_total/Ts);
 t = Ts : Ts*nsim;
@@ -72,8 +72,9 @@ xlabel('t/(h)')
 figure
 plot(t/60,T,'LineWidth',1.5)
 hold on
-stairs(t/60,setpoint(:,2)+1,'r--','LineWidth',1.5)
-stairs(t/60,setpoint(:,2)-1,'r--','LineWidth',1.5)
+stairs(t/60,setpoint(:,2),'r--','LineWidth',1.5)
+stairs(t/60,setpoint(:,2)+1,'k--','LineWidth',.5)
+stairs(t/60,setpoint(:,2)-1,'k--','LineWidth',.5)
 
 title('Temperatura do Reator')
 ylabel('T/(K)')
@@ -99,7 +100,7 @@ ylabel('P/(M)')
 xlabel('t/(h)')
 
 figure
-plot(t,D0)
+plot(t/60,D0)
 title('Momento Estatístico de Ordem Zero')
 ylabel('D0')
 xlabel('t/(h)')
@@ -139,9 +140,10 @@ end
 
 function [Y,U,e,setpoint] = malhas_paralelas(reator, y0, u0, uss, nsim, Ts, PID_Qc, PID_Qi)
     setpoint = [];
-    Viscosp = 3.17;
-    Tsp = 320.8;
-    
+    % Iniciando em estado estacionário
+    Viscosp = reator.viscosidade;
+    Tsp = y0(3);
+            
     e = zeros(nsim + 1, 2);
     e(1,1) = Viscosp - reator.viscosidade;  % Viscosidade
     e(1,2) = Tsp - y0(3);  % Temperatura
@@ -160,20 +162,30 @@ function [Y,U,e,setpoint] = malhas_paralelas(reator, y0, u0, uss, nsim, Ts, PID_
         % Atualização
         y0 = y(end, :);
         
-        if i < 2*60
-            setpoint = [setpoint; [Viscosp, Tsp]];
+        % Escolha de cenário de simulação
+        if i < 2.5*60
+            % Mantem estacionário
         elseif i < 5*60
-            Viscosp = 2.964;
-            Tsp = 323.56;
-            setpoint = [setpoint; [Viscosp, Tsp]];
-        else
+            %     Viscosp = 3.17;
+            %     Tsp = 320.8;
             Viscosp = 2.5361;
             Tsp = 323.56;
+        elseif i < 7.5*60
+            Viscosp = 2.964;
+            Tsp = 323.56;
+        elseif i < 10*60 
+%             Viscosp = 2.5361;
+%             Tsp = 323.56;     % Exemplo mantendo T
             %Tsp = 320.8;
             
-            setpoint = [setpoint; [Viscosp, Tsp]];
-        end
             
+            Viscosp = 3.17;
+            Tsp = 320.8;
+        else
+           reator.Qm =  302.4;  % 80% do valor inicial
+        end
+        setpoint = [setpoint; [Viscosp, Tsp]];
+        
         
         % Coleta de CV
         e(i+1,1) = Viscosp - reator.viscosidade;    % Viscosidade
