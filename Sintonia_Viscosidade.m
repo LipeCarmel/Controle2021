@@ -5,7 +5,7 @@ reator = ReatorPolimer;
 
 % Tempo de simulação
 tempo_total = 80;   % min
-Ts = 1;              % min
+Ts = 1;             % min
 nsim = ceil(tempo_total/Ts);
 t = Ts : Ts*nsim;
 
@@ -17,7 +17,7 @@ yss = fsolve(@(x)reator.derivadas(0,x, uss), y, optimset('Display','off'));
 viscosiss = reator.viscosidade;
 
 %% Malha SISO
-% Sintonia inicial como um controlador P de ganho unitário
+% Sintonia
 PID = [-83.148611713950790, -12.512685662730720, -0.269884930099017];
 
 MV = 1; % Qi
@@ -26,10 +26,9 @@ setpoint = 3.17;
 %% Sintonia
 novoPID = fmincon(@(par) custo(@(e, Ts) indice.ITAE(e, Ts), reator, yss, uss, nsim, Ts, par, MV, setpoint),...
                     PID, eye(3),zeros(3,1),[],[],[],[],[], optimoptions('fmincon', 'StepTolerance', 1e-7));
-npid = novoPID;
+
 
 %% Resultado
-novoPID = npid;
 [Y,U,e] = malha_SISO(reator, yss, uss, uss, nsim, Ts, novoPID, MV, setpoint);
 
 I = Y(:,1);
@@ -38,14 +37,14 @@ T = Y(:,3);
 Tc = Y(:,4);
 D0 = Y(:,5);
 D1 = Y(:,6);
-visc = 0.0012*(D1./D0).^0.71;
+visc = reator.vetor_viscosidade(D0,D1);
 kd = reator.Ad*exp(-reator.Ed./T);
 kt = reator.At*exp(-reator.Et./T);
-P = (2*reator.fi*kd.*M./kt).^0.5;
+P = (2*reator.fi*kd.*I./kt).^0.5;
 Qi = U(:,1);
 Qc = U(:,2);
 
-%%
+%% Gráficos
 figure
 stairs(t,Qi)
 ylabel('Qi')

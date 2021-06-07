@@ -40,7 +40,7 @@ classdef ReatorPolimer < handle
         Tcf = 295;
     end
     methods
-        function obj = ReatorPoli()
+        function obj = ReatorPolimer()
         end
         function [F] = derivadas(obj, t, X, u)
             %X = [I M T Tc D0 D1]
@@ -69,6 +69,11 @@ classdef ReatorPolimer < handle
         end
         function n = viscosidade(obj)
            n = 0.0012*obj.Mw^0.71; 
+        end
+    end
+    methods(Static)
+        function visc = vetor_viscosidade(D0, D1)
+            visc = 0.0012*(D1./D0).^0.71;
         end
     end
 end

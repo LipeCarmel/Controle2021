@@ -1,14 +1,16 @@
 clear all; close all; clc
+%% Sistema
 % Criando o reator
 reator = ReatorPolimer;
+
 % Ponto de Equilíbrio de Referência
 u = [108, 471.6];
 y = [6.6832e-2, 3.3245, 323.56, 305.17, 2.7547e-4, 16.110];
 
 % Variando a entrada
-Q_test = [50 : 20 : 700];
-%Q_test = 50 : 2 : 200;
+Q_test = [300 : 5 : 700];
 
+%% Buscando pontos de equilíbrio
 X = [];    % Matriz de pontos de equilíbrio
 s = [];    % Nota de estabilidade
 
@@ -16,8 +18,8 @@ wb = waitbar(0, 'Calculando...');   % Barra de carregamento
 n_test = length(Q_test);
 for i = 1 : n_test
     waitbar(i/n_test, wb)       % Atualizando a barra
-    uss = [u(1), Q_test(i)];   % Alterando a entrada
-    %uss = [Q_test(i), u(2)];   % Alterando a entrada
+    uss = [u(1), Q_test(i)];   % Alterando a entrada Qc
+    %uss = [Q_test(i), u(2)];   % Alterando a entrada Qi
     
     % Buscando pontos de equilíbrio próximos à entrada
     [y,~,flag] = fsolve(@(x) reator.derivadas(0,x, uss), y,...
@@ -35,8 +37,11 @@ for i = 1 : n_test
     
 end
 close(wb)   % Fecha barra de carregamento
-
-%% Pontos de Equilibrio
+if all(s)
+    disp('Sempre estável.')
+end
+%% Pontos de Obtidos
+close all
 Q = X(:, end);
 I = X(:,1);
 M = X(:,2);
@@ -44,41 +49,71 @@ T = X(:,3);
 Tc = X(:,4);
 D0 = X(:,5);
 D1 = X(:,6);
-visc = 0.0012*(D0./D1).^0.71;
+visc = reator.vetor_viscosidade(D0,D1);
 kd = reator.Ad*exp(-reator.Ed./T);
 kt = reator.At*exp(-reator.Et./T);
-P = (2*reator.fi*kd.*M./kt).^0.5;
+P = (2*reator.fi*kd.*I./kt).^0.5;
+
+%% Gráficos
+figure
+plot(Q, I, 'b-','LineWidth',1.5)
+title('Concentração de Iniciador')
+ylabel('I/(mol/L)')
+xlabel('Qc')
+
+figure
+plot(Q, M, 'b-','LineWidth',1.5)
+title('Concentração de Monômero')
+ylabel('M/(mol/L)')
+xlabel('Qc')
+grid on
+
+figure
+plot(Q, T, 'b-','LineWidth',1.5)
+title('Temperatura do Reator')
+ylabel('T/(K)')
+xlabel('Qc/(L/h)')
+grid on
+
+figure
+plot(Q, Tc, 'b-','LineWidth',1.5)
+title('Temperatura da Camisa')
+ylabel('T/(K)')
+xlabel('Qc/(L/h)')
+grid on
 
 
 figure
-plot(Q, I, '.')
-ylabel('Iniciador')
-xlabel('Q')
-
-figure
-plot(Q, M, '.')
-ylabel('Monômero')
-xlabel('Q')
-
-figure
-plot(Q, T, '.')
-ylabel('Temperatura')
-xlabel('Q')
-
-figure
-plot(Q, Tc, '.')
-ylabel('Temperatura da Camisa')
-xlabel('Q')
-
-figure
-plot(Q, visc, '.')
+plot(Q, visc, 'b-','LineWidth',1.5)
 ylabel('Viscosidade')
-xlabel('Q')
+xlabel('Qc/(L/h)')
+grid on
+
 
 figure
-plot(Q, P, '.')
-ylabel('Concentração de Polímero')
-xlabel('Q')
+plot(Q, P, 'b-','LineWidth',1.5)
+title('Concentração de Polímero')
+ylabel('P/(mol/L)')
+xlabel('Qc/(L/h)')
+
+
+%% Gráfico apresentado
+figure
+subplot(211)
+plot(Q, visc, 'b-','LineWidth',1.5)
+title('Viscosidade')
+ylabel('\eta /(u.v.)')
+xlabel('Qc/(L/h)')
+yticks([2.4 : .2 : 3.5])
+grid on
+
+subplot(212)
+plot(Q, T, 'b-','LineWidth',1.5)
+title('Temperatura do Reator')
+ylabel('T/(K)')
+xlabel('Qc/(L/h)')
+yticks([320:2:330])
+grid on
 
 function g = ModeloLinear(xss, u, reator)
 % Número de estados e entradas

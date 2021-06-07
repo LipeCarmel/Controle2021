@@ -16,9 +16,8 @@ y = [6.6832e-2, 3.3245, 323.56, 305.17, 2.7547e-4, 16.110];
 yss = fsolve(@(x)reator.derivadas(0,x, uss), y, optimset('Display','off'));
 
 %% Malha SISO
-% Sintonia inicial como um controlador P de ganho unitário
-%PID = [-1.040120716248880e+03, -16.069082517216078, -2.100918309282853e+03];
-PID = [-2.128358892805603e+02, -16.501882846447092, -4.281661430481993e-04];   %duRdu
+% Sintonia obtida (será igual a saída do fmincon salva em novoPID)
+PID = [-2.128358892805603e+02, -16.501882846447092, -4.281661430481993e-04];
 
 CV = 3; % T
 MV = 2; % Qc
@@ -37,7 +36,7 @@ T = Y(:,3);
 Tc = Y(:,4);
 D0 = Y(:,5);
 D1 = Y(:,6);
-visc = 0.0012*(D1./D0).^0.71;
+visc = reator.vetor_viscosidade(D0,D1);
 kd = reator.Ad*exp(-reator.Ed./T);
 kt = reator.At*exp(-reator.Et./T);
 P = (2*reator.fi*kd.*M./kt).^0.5;
@@ -45,32 +44,32 @@ P = (2*reator.fi*kd.*M./kt).^0.5;
 Qc = U(:,2);
 
 figure
-stairs(t,Qc)
-ylabel('Qc')
+stairs(t, Qc, 'Linewidth', 1.5)
+ylabel('Qc/(L/h)')
 
-figure
-plot(t,I)
-ylabel('Iniciador')
-
-figure
-plot(t,M)
-ylabel('Monômero')
-
+% figure
+% plot(t,I)
+% ylabel('Iniciador')
+% 
+% figure
+% plot(t,M)
+% ylabel('Monômero')
+% 
 figure
 plot(t,T)
 ylabel('Temperatura')
 
-figure
-plot(t,Tc)
-ylabel('Temperatura da Camisa')
-
-figure
-plot(t,visc)
-ylabel('Viscosidade')
-
-figure
-plot(t,P)
-ylabel('Concentração de Polímero')
+% figure
+% plot(t,Tc)
+% ylabel('Temperatura da Camisa')
+% 
+% figure
+% plot(t,visc)
+% ylabel('Viscosidade')
+% 
+% figure
+% plot(t,P)
+% ylabel('Concentração de Polímero')
 
 %% Funções
 function J = custo(indice_desempenho, reator, yss, uss, nsim, Ts, PID, CV, MV, setpoint)
